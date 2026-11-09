@@ -7,6 +7,34 @@
 {# base.html의 content 자리에 들어갈 본문 #}
 {% block content %}
   <h2>연락처 목록</h2>
-  {# DB를 연결하면 이 문구 대신 연락처 표를 보여 줄 예정이다. #}
-  <p>아직 등록된 연락처가 없습니다.</p>
+
+  {# contacts: app.py 의 index() 가 넘겨준 연락처 목록 #}
+  {% if contacts %}
+    <table>
+      <thead>
+        <tr>
+          <th>이름</th>
+          <th>전화번호</th>
+          <th>이메일</th>
+          <th>주소</th>
+        </tr>
+      </thead>
+      <tbody>
+        {# 연락처 하나마다 표의 한 줄(tr)을 만든다. #}
+        {% for contact in contacts %}
+          <tr>
+            {# {{ }} 안의 값은 Jinja가 자동으로 HTML 이스케이프한다.
+               누군가 이름에 <script> 를 넣어도 글자로만 보이고 실행되지 않는다. #}
+            <td>{{ contact["name"] }}</td>
+            <td>{{ contact["phone"] }}</td>
+            {# 값이 없으면(None) 빈칸으로 둔다. #}
+            <td>{{ contact["email"] or "" }}</td>
+            <td>{{ contact["address"] or "" }}</td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  {% else %}
+    <p>아직 등록된 연락처가 없습니다.</p>
+  {% endif %}
 {% endblock %}

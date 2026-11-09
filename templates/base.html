@@ -16,12 +16,21 @@
     <nav>
       {# url_for('index'): app.py의 index 함수에 연결된 주소("/")를 만들어 준다. #}
       <a href="{{ url_for('index') }}">목록</a>
-      {# 새 연락처 등록 화면은 다음 단계(등록 기능)에서 만든다.
-         그 전까지는 누르면 404(페이지 없음)가 나오는 게 정상이다.
-         등록 기능을 만들면 url_for('new_contact')로 바꾼다. #}
-      <a href="/contacts/new">새 연락처</a>
+      {# app.py 의 add_contact 함수 주소("/add")로 연결 #}
+      <a href="{{ url_for('add_contact') }}">새 연락처</a>
     </nav>
   </header>
+
+  {# flash() 로 저장해 둔 안내 메시지를 한 번만 보여 준다. (새로고침하면 사라짐) #}
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      <ul class="flash">
+        {% for message in messages %}
+          <li>{{ message }}</li>
+        {% endfor %}
+      </ul>
+    {% endif %}
+  {% endwith %}
 
   {# 각 페이지의 본문이 들어갈 자리. 자식 템플릿이 content 블록을 채운다. #}
   <main>

@@ -39,6 +39,40 @@ def init_db():
         db.executescript(f.read().decode("utf-8"))
 
 
+# ---------------------------------------------------------------
+# 연락처 데이터 함수
+# app.py 의 라우트는 SQL을 직접 쓰지 않고 아래 함수들을 호출한다.
+# SQL에 값을 넣을 때는 반드시 ? 자리표시자(파라미터 바인딩)를 사용한다.
+# ---------------------------------------------------------------
+
+
+def list_contacts():
+    """모든 연락처를 이름 가나다순으로 돌려준다."""
+    # 한글은 유니코드 순서가 가나다순이라 ORDER BY name 으로 정렬된다.
+    # COLLATE NOCASE: 영어 이름은 대소문자 구분 없이 정렬 (Kim, kim 을 같이 취급)
+    # 이름이 같으면 먼저 등록한 연락처(id가 작은 것)가 위로 온다.
+    return get_db().execute(
+        "SELECT id, name, phone, email, address, memo, created_at"
+        " FROM contacts"
+        " ORDER BY name COLLATE NOCASE, id"
+    ).fetchall()
+
+
+def create_contact(name, phone, email=None, address=None, memo=None):
+    """새 연락처를 저장하고, 새로 붙은 id를 돌려준다."""
+    db = get_db()
+    # 값은 SQL 문자열에 직접 넣지 않고 ? 자리에 순서대로 전달한다.
+    # sqlite3 가 값을 안전하게 처리해 주므로 SQL 인젝션을 막을 수 있다.
+    cursor = db.execute(
+        "INSERT INTO contacts (name, phone, email, address, memo)"
+        " VALUES (?, ?, ?, ?, ?)",
+        (name, phone, email, address, memo),
+    )
+    # commit 을 해야 변경 내용이 DB 파일에 실제로 저장된다.
+    db.commit()
+    return cursor.lastrowid
+
+
 @click.command("init-db")
 def init_db_command():
     """터미널 명령 'flask --app app init-db' 로 실행되는 함수."""
