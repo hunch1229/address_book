@@ -12,23 +12,28 @@
    이름·전화번호·이메일·주소 4칸이 같은 모양이라 한 번만 정의해서 재사용한다.
    - field     : 입력칸 이름 (form, errors 에서 값을 찾을 때 쓰는 키)
    - label     : 화면에 보일 이름
+   - hint      : 라벨 아래 작은 글씨 설명 (예: "필수")
    - type      : input 종류 (text, tel, email)
-   - attrs     : required, maxlength 같은 추가 속성 #}
-{% macro input_field(field, label, type="text", placeholder="", attrs="") %}
-  <p>
-    <label for="{{ field }}">{{ label }}</label><br>
-    {# value: 기존 값이나 방금 입력한 값을 채워 둔다. None 이면 빈칸.
-       aria-invalid / aria-describedby: 화면 낭독기가 오류 칸과 메시지를 함께 읽어 준다. #}
-    <input type="{{ type }}" id="{{ field }}" name="{{ field }}"
-           value="{{ form.get(field) or '' }}"
-           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
-           {% if errors.get(field) %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}
-           {{ attrs }}>
-    {# 이 칸에 오류가 있으면 바로 아래에 이유를 보여 준다. #}
-    {% if errors.get(field) %}
-      <br><span class="field-error" id="{{ field }}-error">{{ errors[field] }}</span>
-    {% endif %}
-  </p>
+   - attrs     : required, maxlength 같은 추가 속성
+                 (따옴표 없이 그대로 출력되므로 템플릿에 쓴 고정 문자열만 넘길 것. 사용자 입력 금지) #}
+{% macro input_field(field, label, hint="", type="text", placeholder="", attrs="") %}
+  {# field: 라벨(왼쪽)과 입력칸(오른쪽)을 두 칸으로 정렬하는 상자 (style.css 참고) #}
+  <div class="field">
+    <label for="{{ field }}">{{ label }}{% if hint %} <small>{{ hint }}</small>{% endif %}</label>
+    <div>
+      {# value: 기존 값이나 방금 입력한 값을 채워 둔다. None 이면 빈칸.
+         aria-invalid / aria-describedby: 화면 낭독기가 오류 칸과 메시지를 함께 읽어 준다. #}
+      <input type="{{ type }}" id="{{ field }}" name="{{ field }}"
+             value="{{ form.get(field) or '' }}"
+             {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+             {% if errors.get(field) %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}
+             {{ attrs }}>
+      {# 이 칸에 오류가 있으면 바로 아래에 빨간 글씨로 이유를 보여 준다. #}
+      {% if errors.get(field) %}
+        <span class="field-error" id="{{ field }}-error">{{ errors[field] }}</span>
+      {% endif %}
+    </div>
+  </div>
 {% endmacro %}
 
 {% block content %}
@@ -36,27 +41,27 @@
 
   {# 오류가 하나라도 있으면 폼 위에 안내 문구를 보여 준다. #}
   {% if errors %}
-    <p class="errors">입력값을 확인해 주세요. 잘못된 칸 아래에 이유가 적혀 있습니다.</p>
+    <p class="errors" role="alert">입력값을 확인해 주세요. 잘못된 칸 아래에 이유가 적혀 있습니다.</p>
   {% endif %}
 
   {# method="post": 입력값을 주소창이 아닌 요청 본문에 담아 보낸다. #}
-  <form method="post" action="{{ action_url }}">
+  <form method="post" action="{{ action_url }}" class="contact-form">
     {# required, maxlength, type="email" 은 브라우저가 먼저 막아 주는 보조 검사다.
        브라우저 검사는 사용자가 끌 수 있으므로 진짜 검사는 서버(app.py)에서 한다. #}
-    {{ input_field("name", "이름 (필수, 30자 이하)", attrs="required maxlength=30") }}
+    {{ input_field("name", "이름", hint="필수, 30자 이하", attrs="required maxlength=30") }}
     {# type="tel": 휴대폰에서 숫자 키패드가 뜬다. #}
-    {{ input_field("phone", "전화번호 (필수)", type="tel", placeholder="010-1234-5678",
+    {{ input_field("phone", "전화번호", hint="필수", type="tel", placeholder="010-1234-5678",
                    attrs="required maxlength=20") }}
     {{ input_field("email", "이메일", type="email", placeholder="hong@example.com") }}
     {{ input_field("address", "주소") }}
-    <p>
-      <label for="memo">메모</label><br>
+    <div class="field">
+      <label for="memo">메모</label>
       {# textarea 는 value 속성 대신 태그 사이에 값을 넣는다. #}
       <textarea id="memo" name="memo" rows="4">{{ form.get('memo') or '' }}</textarea>
-    </p>
-    <p>
-      <button type="submit">저장</button>
-      <a href="{{ url_for('index') }}">취소</a>
-    </p>
+    </div>
+    <div class="form-actions">
+      <button type="submit" class="btn btn-primary">저장</button>
+      <a href="{{ url_for('index') }}" class="btn btn-secondary">취소</a>
+    </div>
   </form>
 {% endblock %}

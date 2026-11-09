@@ -15,19 +15,19 @@
     <label for="q">검색</label>
     {# value="{{ q }}": 검색한 뒤에도 검색어가 입력칸에 남아 있게 한다. #}
     <input type="search" id="q" name="q" value="{{ q }}" placeholder="이름 또는 전화번호">
-    <button type="submit">검색</button>
+    <button type="submit" class="btn btn-primary">검색</button>
     {# 전체 보기: 검색어 없이 "/" 로 가면 모든 연락처가 나온다. #}
-    <a href="{{ url_for('index') }}">전체 보기</a>
+    <a href="{{ url_for('index') }}" class="btn btn-secondary">전체 보기</a>
   </form>
 
   {# 검색 중일 때만 몇 건 찾았는지 알려 준다. #}
   {% if q %}
-    <p>'{{ q }}' 검색 결과: {{ contacts|length }}건</p>
+    <p class="result-count">'{{ q }}' 검색 결과: {{ contacts|length }}건</p>
   {% endif %}
 
   {# contacts: app.py 의 index() 가 넘겨준 연락처 목록 #}
   {% if contacts %}
-    <table>
+    <table class="contacts">
       <thead>
         <tr>
           <th>이름</th>
@@ -38,26 +38,29 @@
         </tr>
       </thead>
       <tbody>
-        {# 연락처 하나마다 표의 한 줄(tr)을 만든다. #}
+        {# 연락처 하나마다 표의 한 줄(tr)을 만든다.
+           data-label: 휴대폰 화면에서 표가 카드 모양으로 바뀔 때 칸 앞에 붙는 이름 (style.css 참고) #}
         {% for contact in contacts %}
           <tr>
             {# {{ }} 안의 값은 Jinja가 자동으로 HTML 이스케이프한다.
                누군가 이름에 <script> 를 넣어도 글자로만 보이고 실행되지 않는다. #}
-            <td>{{ contact["name"] }}</td>
-            <td>{{ contact["phone"] }}</td>
-            {# 값이 없으면(None) 빈칸으로 둔다. #}
-            <td>{{ contact["email"] or "" }}</td>
-            <td>{{ contact["address"] or "" }}</td>
-            <td>
+            <td class="name" data-label="이름">{{ contact["name"] }}</td>
+            <td class="phone" data-label="전화번호">{{ contact["phone"] }}</td>
+            {# 값이 없으면(None) 빈칸으로 둔다. 휴대폰 화면에서는 빈칸을 숨긴다.
+               (빈칸이 진짜 비어 있어야 CSS 의 :empty 가 동작하므로 태그 사이에 공백을 두지 않는다) #}
+            <td class="email" data-label="이메일">{{ contact["email"] or "" }}</td>
+            <td data-label="주소">{{ contact["address"] or "" }}</td>
+            <td class="actions">
               {# 수정: 화면을 여는 것뿐이라 일반 링크(GET)로 충분하다. #}
-              <a href="{{ url_for('edit_contact', contact_id=contact['id']) }}">수정</a>
+              <a href="{{ url_for('edit_contact', contact_id=contact['id']) }}"
+                 class="btn btn-small btn-edit">수정</a>
               {# 삭제: 데이터를 지우는 동작이라 반드시 POST 폼으로 보낸다.
                  onsubmit 에서 confirm() 이 false(취소)를 돌려주면 폼이 전송되지 않는다. #}
               <form method="post"
                     action="{{ url_for('delete_contact', contact_id=contact['id']) }}"
-                    style="display:inline"
+                    class="inline-form"
                     onsubmit="return confirm('정말 삭제하시겠습니까?');">
-                <button type="submit">삭제</button>
+                <button type="submit" class="btn btn-small btn-delete">삭제</button>
               </form>
             </td>
           </tr>
@@ -66,8 +69,8 @@
     </table>
   {% elif q %}
     {# 검색했는데 결과가 없을 때 #}
-    <p>검색 결과가 없습니다.</p>
+    <p class="empty">검색 결과가 없습니다.</p>
   {% else %}
-    <p>아직 등록된 연락처가 없습니다.</p>
+    <p class="empty">아직 등록된 연락처가 없습니다.</p>
   {% endif %}
 {% endblock %}
