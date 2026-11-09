@@ -7,6 +7,7 @@ import sqlite3
 
 import click
 from flask import current_app, g
+from flask.cli import with_appcontext
 
 
 def get_db():
@@ -142,8 +143,13 @@ def delete_contact(contact_id):
 
 
 @click.command("init-db")
+@with_appcontext  # 명령을 어떤 방식으로 실행해도 current_app, g 를 쓸 수 있게 한다.
 def init_db_command():
-    """터미널 명령 'flask --app app init-db' 로 실행되는 함수."""
+    """터미널 명령 'flask --app app init-db' 로 실행되는 함수.
+
+    앱이 시작될 때 테이블을 자동으로 만들므로 꼭 실행할 필요는 없다.
+    실행해도 CREATE TABLE IF NOT EXISTS 라서 기존 데이터는 지워지지 않는다.
+    """
     init_db()
     click.echo(f"데이터베이스를 준비했습니다: {current_app.config['DATABASE']}")
 

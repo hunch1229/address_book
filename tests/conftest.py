@@ -21,9 +21,7 @@ def app(tmp_path):
     # 혹시라도 실제 DB를 가리키고 있으면 테스트를 바로 멈춘다. (안전장치)
     assert not app.config["DATABASE"].endswith("instance/addressbook.db")
 
-    # 임시 DB에 contacts 테이블을 만든다.
-    with app.app_context():
-        db.init_db()
+    # contacts 테이블은 create_app() 이 시작할 때 자동으로 만든다. (init-db 불필요)
 
     yield app
 

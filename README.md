@@ -48,7 +48,7 @@ address_book/
 │   └── style.css        # 화면 디자인 (외부 라이브러리 없음)
 ├── tests/
 │   ├── conftest.py      # 테스트 준비 코드 (테스트 전용 임시 DB)
-│   └── test_app.py      # 자동 테스트 16개
+│   └── test_app.py      # 자동 테스트 18개
 ├── screenshots/         # 실습 과정 캡처
 ├── instance/            # 실행하면 자동 생성, addressbook.db 저장 (git 제외)
 ├── requirements.txt     # 필요한 패키지 목록
@@ -139,17 +139,13 @@ pip install -r requirements.txt
 
 ---
 
-## DB 초기화 (처음 한 번)
+## DB 준비 (따로 할 일 없음)
 
-```bash
-flask --app app init-db
-```
+앱이 시작될 때 `instance/` 폴더와 `instance/addressbook.db` 파일, `contacts` 테이블이 **자동으로 만들어집니다.** 별도의 초기화 명령은 필요 없습니다.
 
-`데이터베이스를 준비했습니다: .../instance/addressbook.db` 가 나오면 성공입니다.
-`instance/` 폴더와 DB 파일이 자동으로 만들어지고 `contacts` 테이블이 생깁니다.
-
-- 다시 실행해도 **저장된 연락처는 지워지지 않습니다.** (`CREATE TABLE IF NOT EXISTS`)
-- 데이터를 모두 지우고 처음부터 시작하려면 `instance/addressbook.db` 파일을 삭제한 뒤 다시 실행하세요.
+- 테이블이 이미 있으면 그대로 두므로 **저장된 연락처는 지워지지 않습니다.** (`CREATE TABLE IF NOT EXISTS`)
+- 데이터를 모두 지우고 처음부터 시작하려면 서버를 끄고 `instance/addressbook.db` 파일을 삭제한 뒤 다시 실행하세요.
+- 예전 방식인 `flask --app app init-db` 도 남아 있지만, 실행하지 않아도 됩니다.
 
 ---
 
@@ -183,10 +179,10 @@ flask --app app run --debug
 pytest -v
 ```
 
-마지막 줄에 `16 passed` 가 나오면 모두 통과입니다. 짧게 보려면 `pytest -q` 를 쓰세요.
+마지막 줄에 `18 passed` 가 나오면 모두 통과입니다. 짧게 보려면 `pytest -q` 를 쓰세요.
 
 - 테스트는 매번 **테스트 전용 임시 DB**를 새로 만들어 사용하므로, 실제 `instance/addressbook.db` 의 데이터는 바뀌지 않습니다.
-- 확인하는 내용: 목록 화면 응답, 등록·수정·삭제, 삭제는 POST만 허용, 없는 연락처는 404, 이름·전화번호 검색, 입력 검증(빈 이름, 잘못된 전화번호), SQL 인젝션(`' OR '1'='1`)·XSS(`<script>`) 차단
+- 확인하는 내용: 목록 화면 응답, 등록·수정·삭제, 삭제는 POST만 허용, 없는 연락처는 404, 이름·전화번호 검색, 입력 검증(빈 이름, 잘못된 전화번호), SQL 인젝션(`' OR '1'='1`)·XSS(`<script>`) 차단, init-db 없이 첫 화면이 열리고 재시작해도 데이터가 남는지
 
 ---
 

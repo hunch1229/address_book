@@ -10,7 +10,7 @@ Python Flask와 SQLite(별도 DB 서버 없이 파일 하나)로 만든다.
 ## 폴더 구조
 ```
 address_book/
-├── app.py               # 앱 생성(create_app), 라우트, 입력 검증(validate_contact)
+├── app.py               # 앱 생성(create_app, 시작 시 테이블 자동 생성), 라우트, 입력 검증(validate_contact)
 ├── db.py                # DB 연결/종료, init-db 명령, 연락처 CRUD·검색 함수
 ├── schema.sql           # contacts 테이블 정의
 ├── templates/
@@ -45,7 +45,8 @@ source .venv/bin/activate          # Mac
 .venv\Scripts\Activate.ps1         # Windows PowerShell
 
 pip install -r requirements.txt    # 패키지 설치 (처음 한 번)
-flask --app app init-db            # DB 테이블 생성 (처음 한 번, 다시 실행해도 데이터 유지)
+# DB 테이블은 앱 시작 시 create_app() 이 자동 생성한다 (CREATE TABLE IF NOT EXISTS, 데이터 유지).
+# init-db 명령은 남아 있지만 실행하지 않아도 된다.
 flask --app app run --debug        # 개발 서버 실행 → http://127.0.0.1:5000
 pytest -v                          # 테스트 실행 (실제 DB는 건드리지 않음)
 ```

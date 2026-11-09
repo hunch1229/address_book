@@ -4,6 +4,9 @@
 
 import re
 
+import db
+from app import create_app
+
 
 def names_on_page(response):
     """응답 HTML의 목록 표에서 이름 칸(class="name")의 글자만 뽑아 리스트로 돌려준다."""
@@ -232,3 +235,41 @@ def test_XSS_스크립트가_실행되지_않게_이스케이프됨(client, add)
     html = client.get("/").get_data(as_text=True)
     assert "<script>alert(1)</script>" not in html
     assert "&lt;script&gt;alert(1)&lt;/script&gt;" in html
+
+
+# ---------------------------------------------------------------
+# 8. DB 자동 생성 (init-db 명령 없이 실행)
+# ---------------------------------------------------------------
+
+
+def test_init_db_없이도_첫_화면이_열림(tmp_path):
+    # DB 파일이 아예 없는 상태에서 시작한다. (init-db 를 실행하지 않은 상황)
+    db_path = tmp_path / "fresh.db"
+    assert not db_path.exists()
+
+    app = create_app({"TESTING": True, "DATABASE": str(db_path)})
+    response = app.test_client().get("/")
+
+    # "no such table" 오류(500) 없이 빈 목록 화면이 열린다.
+    assert response.status_code == 200
+    assert "아직 등록된 연락처가 없습니다" in response.get_data(as_text=True)
+    assert db_path.exists()
+
+
+def test_앱을_다시_시작해도_기존_데이터가_남음(tmp_path):
+    db_path = str(tmp_path / "keep.db")
+
+    # 첫 번째 실행: 연락처 1건 저장
+    first = create_app({"TESTING": True, "DATABASE": db_path})
+    first.test_client().post("/add", data={"name": "홍길동", "phone": "010-1234-5678"})
+
+    # 두 번째 실행: 같은 DB 파일로 앱을 다시 만든다. (서버를 껐다 켠 상황)
+    # 시작할 때 테이블 생성 코드가 다시 돌아도 데이터는 지워지면 안 된다.
+    second = create_app({"TESTING": True, "DATABASE": db_path})
+    assert names_on_page(second.test_client().get("/")) == ["홍길동"]
+
+    # init-db 명령을 따로 실행해도 마찬가지로 데이터가 남는다.
+    result = second.test_cli_runner().invoke(args=["init-db"])
+    assert result.exit_code == 0
+    with second.app_context():
+        assert [r["name"] for r in db.list_contacts()] == ["홍길동"]

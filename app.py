@@ -123,6 +123,12 @@ def create_app(test_config=None):
     # db.py 의 DB 연결 정리 기능과 init-db 명령을 앱에 등록한다.
     db.init_app(app)
 
+    # 앱이 시작될 때 contacts 테이블이 없으면 자동으로 만든다.
+    # schema.sql 은 CREATE TABLE IF NOT EXISTS 라서 테이블이 이미 있으면 아무것도 하지 않는다.
+    # → 기존 연락처는 지워지지 않고, init-db 명령을 따로 실행하지 않아도 첫 화면이 열린다.
+    with app.app_context():
+        db.init_db()
+
     # 404 오류(없는 주소, 없는 연락처)가 나면 기본 영어 화면 대신 404.html 을 보여 준다.
     @app.errorhandler(404)
     def page_not_found(e):
