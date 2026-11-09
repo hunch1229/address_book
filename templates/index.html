@@ -8,6 +8,23 @@
 {% block content %}
   <h2>연락처 목록</h2>
 
+  {# 검색창
+     method="get": 검색어가 주소에 "/?q=홍길동" 처럼 붙는다.
+     데이터를 바꾸지 않는 조회라서 GET 이 맞고, 검색 결과 주소를 즐겨찾기·공유할 수도 있다. #}
+  <form method="get" action="{{ url_for('index') }}" class="search">
+    <label for="q">검색</label>
+    {# value="{{ q }}": 검색한 뒤에도 검색어가 입력칸에 남아 있게 한다. #}
+    <input type="search" id="q" name="q" value="{{ q }}" placeholder="이름 또는 전화번호">
+    <button type="submit">검색</button>
+    {# 전체 보기: 검색어 없이 "/" 로 가면 모든 연락처가 나온다. #}
+    <a href="{{ url_for('index') }}">전체 보기</a>
+  </form>
+
+  {# 검색 중일 때만 몇 건 찾았는지 알려 준다. #}
+  {% if q %}
+    <p>'{{ q }}' 검색 결과: {{ contacts|length }}건</p>
+  {% endif %}
+
   {# contacts: app.py 의 index() 가 넘겨준 연락처 목록 #}
   {% if contacts %}
     <table>
@@ -47,6 +64,9 @@
         {% endfor %}
       </tbody>
     </table>
+  {% elif q %}
+    {# 검색했는데 결과가 없을 때 #}
+    <p>검색 결과가 없습니다.</p>
   {% else %}
     <p>아직 등록된 연락처가 없습니다.</p>
   {% endif %}

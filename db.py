@@ -46,15 +46,49 @@ def init_db():
 # ---------------------------------------------------------------
 
 
-def list_contacts():
-    """모든 연락처를 이름 가나다순으로 돌려준다."""
+def _escape_like(text):
+    """LIKE 검색에서 특별한 뜻을 가진 문자(%, _, \\)를 일반 글자로 바꾼다.
+
+    LIKE 에서 % 는 '아무 글자 여러 개', _ 는 '아무 글자 한 개'라는 뜻이다.
+    사용자가 검색창에 % 를 입력하면 모든 연락처가 나오는 문제를 막기 위해
+    앞에 \\ 를 붙여 진짜 % 글자로 찾게 한다. (SQL의 ESCAPE '\\' 와 짝을 이룬다)
+    """
+    return text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+
+
+def list_contacts(q=""):
+    """연락처 목록을 이름 가나다순으로 돌려준다.
+
+    q(검색어)가 있으면 이름 또는 전화번호에 검색어가 들어간 연락처만 돌려준다.
+    전화번호는 하이픈을 빼고 비교하므로 '01012345678', '1234-5678' 모두 찾을 수 있다.
+    """
     # 한글은 유니코드 순서가 가나다순이라 ORDER BY name 으로 정렬된다.
     # COLLATE NOCASE: 영어 이름은 대소문자 구분 없이 정렬 (Kim, kim 을 같이 취급)
     # 이름이 같으면 먼저 등록한 연락처(id가 작은 것)가 위로 온다.
+    if not q:
+        return get_db().execute(
+            "SELECT id, name, phone, email, address, memo, created_at"
+            " FROM contacts"
+            " ORDER BY name COLLATE NOCASE, id"
+        ).fetchall()
+
+    # 검색어 앞뒤에 % 를 붙여 '포함' 검색을 만든다. 예) 길동 → %길동%
+    # % 는 SQL 문자열이 아니라 ? 에 넘길 '값' 쪽에 붙인다. (파라미터 바인딩 유지)
+    name_pattern = "%" + _escape_like(q) + "%"
+    # 전화번호용 검색어: 하이픈을 뺀다. 예) 010-1234 → 0101234
+    phone_q = q.replace("-", "")
+    phone_pattern = "%" + _escape_like(phone_q) + "%"
+
+    # ? 자리에 순서대로 name_pattern, phone_q, phone_pattern 이 들어간다.
+    # (? <> '' AND ...): 검색어가 '-' 뿐이라 phone_q 가 빈 문자열이면
+    #  전화번호 조건이 '%%'(전부 일치)가 되지 않도록 전화번호 비교를 건너뛴다.
     return get_db().execute(
         "SELECT id, name, phone, email, address, memo, created_at"
         " FROM contacts"
-        " ORDER BY name COLLATE NOCASE, id"
+        " WHERE name LIKE ? ESCAPE '\\'"
+        "    OR (? <> '' AND REPLACE(phone, '-', '') LIKE ? ESCAPE '\\')"
+        " ORDER BY name COLLATE NOCASE, id",
+        (name_pattern, phone_q, phone_pattern),
     ).fetchall()
 
 

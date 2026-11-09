@@ -3,45 +3,52 @@
    - page_title : 화면 제목 ("새 연락처 등록" 또는 "연락처 수정")
    - action_url : 폼을 보낼 주소 ("/add" 또는 "/edit/3")
    - form       : 입력칸에 채울 값 (등록은 빈 값, 수정은 기존 값, 오류 시 방금 입력한 값)
-   - errors     : 오류 메시지 목록 #}
+   - errors     : {칸 이름: 오류 메시지}. 예) {"phone": "전화번호를 입력하세요."} #}
 {% extends "base.html" %}
 
 {% block title %}{{ page_title }}{% endblock %}
 
+{# 입력칸 하나를 그리는 매크로(템플릿 안의 함수).
+   이름·전화번호·이메일·주소 4칸이 같은 모양이라 한 번만 정의해서 재사용한다.
+   - field     : 입력칸 이름 (form, errors 에서 값을 찾을 때 쓰는 키)
+   - label     : 화면에 보일 이름
+   - type      : input 종류 (text, tel, email)
+   - attrs     : required, maxlength 같은 추가 속성 #}
+{% macro input_field(field, label, type="text", placeholder="", attrs="") %}
+  <p>
+    <label for="{{ field }}">{{ label }}</label><br>
+    {# value: 기존 값이나 방금 입력한 값을 채워 둔다. None 이면 빈칸.
+       aria-invalid / aria-describedby: 화면 낭독기가 오류 칸과 메시지를 함께 읽어 준다. #}
+    <input type="{{ type }}" id="{{ field }}" name="{{ field }}"
+           value="{{ form.get(field) or '' }}"
+           {% if placeholder %}placeholder="{{ placeholder }}"{% endif %}
+           {% if errors.get(field) %}aria-invalid="true" aria-describedby="{{ field }}-error"{% endif %}
+           {{ attrs }}>
+    {# 이 칸에 오류가 있으면 바로 아래에 이유를 보여 준다. #}
+    {% if errors.get(field) %}
+      <br><span class="field-error" id="{{ field }}-error">{{ errors[field] }}</span>
+    {% endif %}
+  </p>
+{% endmacro %}
+
 {% block content %}
   <h2>{{ page_title }}</h2>
 
+  {# 오류가 하나라도 있으면 폼 위에 안내 문구를 보여 준다. #}
   {% if errors %}
-    <ul class="errors">
-      {% for error in errors %}
-        <li>{{ error }}</li>
-      {% endfor %}
-    </ul>
+    <p class="errors">입력값을 확인해 주세요. 잘못된 칸 아래에 이유가 적혀 있습니다.</p>
   {% endif %}
 
   {# method="post": 입력값을 주소창이 아닌 요청 본문에 담아 보낸다. #}
   <form method="post" action="{{ action_url }}">
-    {# value="{{ form.get(...) }}": 기존 값이나 방금 입력한 값을 입력칸에 채워 둔다.
-       DB 값이 NULL(None)이면 "None" 글자가 보이지 않도록 or '' 로 빈칸 처리한다. #}
-    <p>
-      <label for="name">이름 (필수)</label><br>
-      {# required: 브라우저가 빈칸 제출을 먼저 막아 준다. (서버에서도 다시 검사함) #}
-      <input type="text" id="name" name="name" value="{{ form.get('name') or '' }}" required>
-    </p>
-    <p>
-      <label for="phone">전화번호 (필수)</label><br>
-      {# type="tel": 휴대폰에서 숫자 키패드가 뜬다. #}
-      <input type="tel" id="phone" name="phone" value="{{ form.get('phone') or '' }}"
-             placeholder="010-1234-5678" required>
-    </p>
-    <p>
-      <label for="email">이메일</label><br>
-      <input type="email" id="email" name="email" value="{{ form.get('email') or '' }}">
-    </p>
-    <p>
-      <label for="address">주소</label><br>
-      <input type="text" id="address" name="address" value="{{ form.get('address') or '' }}">
-    </p>
+    {# required, maxlength, type="email" 은 브라우저가 먼저 막아 주는 보조 검사다.
+       브라우저 검사는 사용자가 끌 수 있으므로 진짜 검사는 서버(app.py)에서 한다. #}
+    {{ input_field("name", "이름 (필수, 30자 이하)", attrs="required maxlength=30") }}
+    {# type="tel": 휴대폰에서 숫자 키패드가 뜬다. #}
+    {{ input_field("phone", "전화번호 (필수)", type="tel", placeholder="010-1234-5678",
+                   attrs="required maxlength=20") }}
+    {{ input_field("email", "이메일", type="email", placeholder="hong@example.com") }}
+    {{ input_field("address", "주소") }}
     <p>
       <label for="memo">메모</label><br>
       {# textarea 는 value 속성 대신 태그 사이에 값을 넣는다. #}

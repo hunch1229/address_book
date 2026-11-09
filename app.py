@@ -2,6 +2,7 @@
 # Flask 앱을 만들고, 주소(URL)마다 어떤 화면을 보여 줄지 정한다.
 
 import os
+import re
 
 from flask import (
     Flask,
@@ -18,23 +19,64 @@ import db
 # 폼에서 받는 입력칸 이름 목록 (등록·수정 공통)
 FORM_FIELDS = ("name", "phone", "email", "address", "memo")
 
+# 입력 검증 규칙
+NAME_MAX_LENGTH = 30
+# 전화번호: 숫자로 시작하고 숫자로 끝나며, 중간에 하이픈(-)을 하나씩 넣을 수 있다.
+#   통과: 010-1234-5678, 01012345678, 02-123-4567
+#   실패: 010--1234, -010-1234, 010-1234-, 010 1234 5678, 공일공, ０１０(전각 숫자)
+# \d 대신 [0-9] 를 쓴 이유: 파이썬의 \d 는 전각 숫자 같은 다른 나라 숫자도 통과시킨다.
+PHONE_PATTERN = re.compile(r"^[0-9]+(-[0-9]+)*$")
+PHONE_MAX_LENGTH = 20
+# 이메일: '@' 앞뒤에 글자가 있고, 뒤쪽에 '.' 이 있는 간단한 형식
+#   통과: hong@example.com   실패: hong, hong@, hong@example, @example.com
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+EMAIL_MAX_LENGTH = 254
+
+
+def validate_contact(form):
+    """입력값을 검사해서 오류 메시지를 {칸 이름: 메시지} 형태로 돌려준다.
+
+    문제가 없으면 빈 딕셔너리 {} 를 돌려준다.
+    칸 이름별로 나눠 두면 템플릿에서 각 입력칸 바로 아래에 메시지를 보여 줄 수 있다.
+    """
+    errors = {}
+
+    # 이름: 필수, 30자 이하
+    if not form["name"]:
+        errors["name"] = "이름을 입력하세요."
+    elif len(form["name"]) > NAME_MAX_LENGTH:
+        errors["name"] = (
+            f"이름은 {NAME_MAX_LENGTH}자 이하로 입력하세요. "
+            f"(지금 {len(form['name'])}자)"
+        )
+
+    # 전화번호: 필수, 숫자와 하이픈만
+    if not form["phone"]:
+        errors["phone"] = "전화번호를 입력하세요."
+    elif len(form["phone"]) > PHONE_MAX_LENGTH:
+        errors["phone"] = f"전화번호는 {PHONE_MAX_LENGTH}자 이하로 입력하세요."
+    elif not PHONE_PATTERN.match(form["phone"]):
+        errors["phone"] = "전화번호는 숫자와 하이픈(-)만 입력하세요. 예) 010-1234-5678"
+
+    # 이메일: 선택. 입력했을 때만 형식 검사
+    if form["email"]:
+        if len(form["email"]) > EMAIL_MAX_LENGTH:
+            errors["email"] = f"이메일은 {EMAIL_MAX_LENGTH}자 이하로 입력하세요."
+        elif not EMAIL_PATTERN.match(form["email"]):
+            errors["email"] = "이메일 형식이 올바르지 않습니다. 예) hong@example.com"
+
+    return errors
+
 
 def read_contact_form():
     """요청에서 연락처 입력값을 꺼내 검사한다.
 
     돌려주는 값: (form, errors)
     - form   : 앞뒤 공백을 지운 입력값 딕셔너리
-    - errors : 오류 메시지 목록 (문제가 없으면 빈 목록)
+    - errors : {칸 이름: 오류 메시지} (문제가 없으면 빈 딕셔너리)
     """
     form = {key: request.form.get(key, "").strip() for key in FORM_FIELDS}
-
-    # 필수 항목 검사 (형식 검사는 6단계에서 추가)
-    errors = []
-    if not form["name"]:
-        errors.append("이름을 입력하세요.")
-    if not form["phone"]:
-        errors.append("전화번호를 입력하세요.")
-    return form, errors
+    return form, validate_contact(form)
 
 
 def to_db_values(form):
@@ -87,11 +129,14 @@ def create_app(test_config=None):
         return render_template("404.html"), 404
 
     # "/" 주소: 연락처 목록 화면
+    # 검색하면 "/?q=홍길동" 처럼 주소 뒤에 검색어가 붙어서 온다.
     @app.route("/")
     def index():
-        contacts = db.list_contacts()
-        # 템플릿에 contacts 라는 이름으로 목록을 넘겨준다.
-        return render_template("index.html", contacts=contacts)
+        # request.args: 주소의 ? 뒤에 붙은 값. 검색어가 없으면 빈 문자열
+        q = request.args.get("q", "").strip()
+        contacts = db.list_contacts(q)
+        # 템플릿에 연락처 목록과 검색어를 넘겨준다. (검색창에 검색어를 남겨 두기 위해)
+        return render_template("index.html", contacts=contacts, q=q)
 
     # "/add" 주소: 연락처 등록 화면
     # GET  = 빈 입력 폼을 보여 준다.
@@ -115,7 +160,7 @@ def create_app(test_config=None):
             return redirect(url_for("index"))
 
         # GET 요청: 빈 폼을 보여 준다.
-        return render_template("form.html", form={}, errors=[], **page)
+        return render_template("form.html", form={}, errors={}, **page)
 
     # "/edit/3" 같은 주소: 3번 연락처 수정 화면
     # <int:contact_id>: 주소의 숫자 부분을 정수로 받는다. 숫자가 아니면 자동으로 404.
@@ -142,7 +187,7 @@ def create_app(test_config=None):
 
         # GET 요청: DB에 저장된 기존 값을 채운 폼을 보여 준다.
         # dict(contact): sqlite3.Row 를 딕셔너리로 바꿔 form.get() 을 쓸 수 있게 한다.
-        return render_template("form.html", form=dict(contact), errors=[], **page)
+        return render_template("form.html", form=dict(contact), errors={}, **page)
 
     # "/delete/3" 같은 주소: 3번 연락처 삭제
     # methods=["POST"]: POST 요청만 받는다. 주소창에 입력하거나 링크를 눌러서(GET)
