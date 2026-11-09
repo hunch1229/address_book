@@ -1,0 +1,31 @@
+{# 모든 페이지가 공통으로 쓰는 틀.
+   이 주석 형식은 Jinja 주석이라 브라우저로 보내지지 않는다. (HTML 주석 <!-- -->은 그대로 보내짐) #}
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  {# 휴대폰에서도 화면 폭에 맞게 보이도록 설정 #}
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  {# 각 페이지가 title 블록을 채우면 "목록 - 주소록"처럼 보이고, 비워 두면 "주소록"만 보인다. #}
+  <title>{% block title %}{% endblock %}{% if self.title() %} - {% endif %}주소록</title>
+</head>
+<body>
+  {# 모든 페이지에 공통으로 나오는 상단 영역 #}
+  <header>
+    <h1><a href="{{ url_for('index') }}">주소록</a></h1>
+    <nav>
+      {# url_for('index'): app.py의 index 함수에 연결된 주소("/")를 만들어 준다. #}
+      <a href="{{ url_for('index') }}">목록</a>
+      {# 새 연락처 등록 화면은 다음 단계(등록 기능)에서 만든다.
+         그 전까지는 누르면 404(페이지 없음)가 나오는 게 정상이다.
+         등록 기능을 만들면 url_for('new_contact')로 바꾼다. #}
+      <a href="/contacts/new">새 연락처</a>
+    </nav>
+  </header>
+
+  {# 각 페이지의 본문이 들어갈 자리. 자식 템플릿이 content 블록을 채운다. #}
+  <main>
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

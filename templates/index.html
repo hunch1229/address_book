@@ -1,0 +1,12 @@
+{# base.html의 틀(제목, 상단 메뉴)을 그대로 물려받는다. #}
+{% extends "base.html" %}
+
+{# 브라우저 탭에 "목록 - 주소록"으로 표시된다. #}
+{% block title %}목록{% endblock %}
+
+{# base.html의 content 자리에 들어갈 본문 #}
+{% block content %}
+  <h2>연락처 목록</h2>
+  {# DB를 연결하면 이 문구 대신 연락처 표를 보여 줄 예정이다. #}
+  <p>아직 등록된 연락처가 없습니다.</p>
+{% endblock %}
