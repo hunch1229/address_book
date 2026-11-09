@@ -27,6 +27,7 @@ address_book/
 ├── screenshots/         # 실습 과정 캡처 이미지 (README에서 참조)
 ├── requirements.txt     # 의존 패키지 (pip freeze 결과)
 ├── README.md            # 사용자용 설치·실행·테스트 안내 (Mac/Windows)
+├── WEEK10.md            # 10주차 문제점 점검·개선 정리 (캡처: screenshots/week10/)
 └── CLAUDE.md
 ```
 

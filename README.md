@@ -1,5 +1,7 @@
 # 주소록 (Address Book)
 
+> 10주차 개선 내용은 [WEEK10.md](WEEK10.md) 참고
+
 Python **Flask**와 **SQLite**로 만든 연락처 관리 웹 애플리케이션입니다.
 별도의 DB 서버 없이 파일 하나(`instance/addressbook.db`)에 데이터를 저장하므로, 파이썬만 있으면 바로 실행할 수 있습니다.
 
