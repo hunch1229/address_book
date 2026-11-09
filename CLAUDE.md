@@ -14,7 +14,8 @@ address_book/
 ├── schema.sql           # contacts 테이블 정의
 ├── templates/           # Jinja2 템플릿 (base.html, index.html, form.html=등록·수정 공용, 404.html)
 ├── static/              # style.css
-├── tests/               # pytest 테스트 (test_app.py)
+├── tests/               # pytest 테스트 (conftest.py=임시 DB fixture, test_app.py)
+├── pytest.ini           # pytest 설정 (import 경로, 테스트 폴더)
 ├── instance/            # 실행 시 자동 생성, addressbook.db 저장 (git 제외)
 ├── screenshots/         # 작업 과정 캡처 이미지
 ├── requirements.txt     # 의존 패키지 (pip freeze 결과)
