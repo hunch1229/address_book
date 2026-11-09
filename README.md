@@ -74,12 +74,26 @@ address_book/
 
 ## 설치 방법
 
+> 아래 명령은 실제로 개발한 환경인 **Mac + zsh (VS Code 통합 터미널)** 기준입니다.
+> Windows에서 다른 부분은 이 절 맨 끝의 [Windows에서 실행할 때](#windows에서-실행할-때)를 보세요.
+
 ### 0. 준비물
+
 - **Python 3.10 이상** (개발 환경: Python 3.14)
-  - 설치 확인: Mac은 `python3 --version`, Windows는 `py --version`
-  - Windows에서 새로 설치할 때는 [python.org](https://www.python.org/downloads/) 설치 화면에서 **"Add python.exe to PATH"** 를 꼭 체크하세요.
+- **Git** (커밋 작성자 이름·이메일 설정까지)
 - 아래 명령은 모두 **프로젝트 폴더(`address_book`) 안에서** 실행합니다.
   VS Code에서 폴더를 열고 메뉴 **터미널 → 새 터미널**을 열면 바로 그 위치입니다.
+
+```bash
+python3 --version
+git config --global user.name "내 이름"          # 처음 한 번
+git config --global user.email "내이메일@example.com"   # 처음 한 번
+git config user.email
+```
+
+**✅ 성공 확인**
+- [ ] `python3 --version` 이 `Python 3.10` 이상을 출력한다.
+- [ ] `git config user.email` 이 내 이메일을 출력한다. (빈 줄이면 커밋 작성자가 `이름@컴퓨터이름.local` 로 기록된다)
 
 ### 1. 프로젝트 받기
 
@@ -89,53 +103,57 @@ cd address_book
 ```
 (git을 쓰지 않는다면 압축 파일을 받아 풀고, 그 폴더로 이동하세요.)
 
+**✅ 성공 확인**
+- [ ] `ls` 를 입력하면 `app.py`, `db.py`, `requirements.txt` 가 보인다.
+
 ### 2. 가상환경 만들기 (처음 한 번)
 
 가상환경은 이 프로젝트 전용 파이썬 패키지 보관함입니다. 다른 프로젝트와 패키지 버전이 섞이지 않게 해 줍니다.
 
-**Mac (터미널)**
 ```bash
 python3 -m venv .venv
 ```
 
-**Windows (PowerShell 또는 명령 프롬프트)**
-```powershell
-py -m venv .venv
-```
+**✅ 성공 확인**
+- [ ] 프로젝트 폴더에 `.venv` 폴더가 생겼다. (`ls -a` 로 확인)
 
 ### 3. 가상환경 켜기 (터미널을 새로 열 때마다)
 
-**Mac**
 ```bash
 source .venv/bin/activate
 ```
 
-**Windows PowerShell**
-```powershell
-.venv\Scripts\Activate.ps1
-```
+끌 때는 `deactivate` 를 입력합니다.
 
-**Windows 명령 프롬프트(cmd)**
-```bat
-.venv\Scripts\activate.bat
-```
-
-켜지면 프롬프트 앞에 `(.venv)` 가 붙습니다. 끌 때는 `deactivate` 를 입력합니다.
-
-> **Windows PowerShell에서 "스크립트를 실행할 수 없으므로…" 오류가 나면** 아래 명령을 한 번 실행한 뒤 다시 켜 보세요.
-> ```powershell
-> Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
-> ```
+**✅ 성공 확인**
+- [ ] 프롬프트 앞에 `(.venv)` 가 붙었다.
+- [ ] `which python` 이 `.../address_book/.venv/bin/python` 을 출력한다.
 
 ### 4. 패키지 설치 (처음 한 번)
 
-가상환경이 켜진 상태에서 실행합니다. (Mac·Windows 공통)
+가상환경이 켜진 상태에서 실행합니다.
 
 ```bash
 pip install -r requirements.txt
 ```
 
 `requirements.txt` 에는 Flask, pytest와 함께 설치되는 패키지가 정확한 버전으로 적혀 있어, 누구나 같은 환경을 만들 수 있습니다.
+
+**✅ 성공 확인**
+- [ ] 마지막에 `Successfully installed ...` (또는 `Requirement already satisfied`) 가 나오고 `ERROR` 가 없다.
+- [ ] `flask --version` 이 `Flask 3.1.3` 을 포함해 출력한다.
+
+### Windows에서 실행할 때
+
+나머지 명령(`pip`, `flask`, `pytest`)은 같고, 아래 두 가지만 다릅니다.
+
+| 단계 | Mac (zsh) | Windows PowerShell |
+|---|---|---|
+| 가상환경 만들기 | `python3 -m venv .venv` | `py -m venv .venv` |
+| 가상환경 켜기 | `source .venv/bin/activate` | `.venv\Scripts\Activate.ps1` |
+
+- Python을 새로 설치할 때 [python.org](https://www.python.org/downloads/) 설치 화면에서 **"Add python.exe to PATH"** 를 꼭 체크하세요.
+- PowerShell에서 "스크립트를 실행할 수 없으므로…" 오류가 나면 `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` 를 한 번 실행한 뒤 다시 켜 보세요.
 
 ---
 
@@ -147,42 +165,64 @@ pip install -r requirements.txt
 - 데이터를 모두 지우고 처음부터 시작하려면 서버를 끄고 `instance/addressbook.db` 파일을 삭제한 뒤 다시 실행하세요.
 - 예전 방식인 `flask --app app init-db` 도 남아 있지만, 실행하지 않아도 됩니다.
 
+**✅ 성공 확인** (아래 "실행 방법"으로 서버를 처음 켠 뒤)
+- [ ] `instance/addressbook.db` 파일이 생겼다.
+- [ ] 첫 화면에 `no such table` 오류 없이 "아직 등록된 연락처가 없습니다" 가 보인다.
+
 ---
 
 ## 실행 방법
 
-가상환경이 켜진 상태에서 실행합니다. (Mac·Windows 공통)
+### 터미널 2개 쓰기
+
+VS Code 터미널 패널의 **+** 버튼으로 터미널을 하나 더 열어, 역할을 나눠 씁니다.
+
+| 터미널 | 용도 |
+|---|---|
+| **Claude용** | Claude Code 작업, `pytest`, `git` |
+| **서버용** | 서버 실행·종료만 (켜 두면 그 터미널은 서버가 차지함) |
+
+서버는 **학생이 서버용 터미널에서 직접** 실행합니다. Claude는 서버를 직접 띄우지 않고 실행 명령만 안내합니다. 두 곳에서 서버를 띄우면 같은 포트를 두고 충돌("Address already in use")이 나기 때문입니다. (규칙은 `CLAUDE.md` 에 있습니다)
+
+### 서버 켜기 (서버용 터미널)
 
 ```bash
-flask --app app run --debug
+source .venv/bin/activate
+flask --app app run --debug --port 5001
 ```
 
-브라우저에서 **http://127.0.0.1:5000** 을 엽니다. 서버를 끌 때는 터미널에서 **Ctrl + C** 를 누릅니다.
+브라우저에서 **http://127.0.0.1:5001** 을 엽니다. 서버를 끌 때는 서버용 터미널에서 **Ctrl + C** 를 누릅니다.
 
 - `--debug`: 코드를 고치면 서버가 자동으로 다시 시작되고, 오류가 나면 자세한 내용을 보여 줍니다. **개발할 때만** 사용하세요.
-- `python app.py` (Windows는 `py app.py`) 로 실행해도 같은 debug 모드로 켜집니다.
+- `--port 5001`: Mac은 AirPlay 수신 모드가 5000번 포트를 쓰고 있어서, 5000번으로 켜면 403 오류나 "Address already in use" 가 납니다. 그래서 5001번을 씁니다.
 
-> **Mac에서 5000번 포트 접속 시 403 오류가 나거나 "Address already in use" 가 나오면**
-> macOS의 AirPlay 수신 모드가 5000번 포트를 쓰고 있는 것입니다. 다른 포트로 실행하세요.
-> ```bash
-> flask --app app run --debug --port 5001
-> ```
-> 그리고 http://127.0.0.1:5001 을 엽니다.
+**✅ 성공 확인**
+- [ ] 서버용 터미널에 `Running on http://127.0.0.1:5001` 과 `Debugger is active!` 가 보인다.
+- [ ] 브라우저에서 http://127.0.0.1:5001 을 열면 남색 상단 바의 "주소록" 목록 화면이 보인다.
+- [ ] 서버용 터미널에 `"GET / HTTP/1.1" 200` 로그가 찍힌다.
+- [ ] 연락처를 하나 등록하면 목록에 나타나고 "연락처가 등록되었습니다." 가 보인다.
+- [ ] Ctrl + C 로 끄고 다시 켜도 등록한 연락처가 남아 있다.
+
+> **"Address already in use" 가 나오면** 이미 5001번 포트를 쓰는 서버가 있다는 뜻입니다. 다른 터미널에 켜 둔 서버가 있는지 확인해 Ctrl + C 로 끄세요. 어디서 켰는지 모르겠다면 `lsof -i :5001` 로 프로세스 번호(PID)를 확인한 뒤 `kill PID번호` 로 끕니다.
 
 ---
 
 ## 테스트 방법
 
-가상환경이 켜진 상태에서 실행합니다. (Mac·Windows 공통)
+가상환경이 켜진 상태에서 **Claude용 터미널**에서 실행합니다. (서버를 켜 두지 않아도 됩니다)
 
 ```bash
 pytest -v
 ```
 
-마지막 줄에 `18 passed` 가 나오면 모두 통과입니다. 짧게 보려면 `pytest -q` 를 쓰세요.
+짧게 보려면 `pytest -q` 를 쓰세요.
 
 - 테스트는 매번 **테스트 전용 임시 DB**를 새로 만들어 사용하므로, 실제 `instance/addressbook.db` 의 데이터는 바뀌지 않습니다.
 - 확인하는 내용: 목록 화면 응답, 등록·수정·삭제, 삭제는 POST만 허용, 없는 연락처는 404, 이름·전화번호 검색, 입력 검증(빈 이름, 잘못된 전화번호), SQL 인젝션(`' OR '1'='1`)·XSS(`<script>`) 차단, init-db 없이 첫 화면이 열리고 재시작해도 데이터가 남는지
+
+**✅ 성공 확인**
+- [ ] 마지막 줄에 `18 passed` 가 나오고 `failed` 나 `error` 가 없다.
+- [ ] 테스트 후에도 브라우저에서 보던 기존 연락처가 그대로 있다.
 
 ---
 

@@ -38,18 +38,32 @@ address_book/
 | `/edit/<int:contact_id>` | GET, POST | `edit_contact` |
 | `/delete/<int:contact_id>` | POST | `delete_contact` |
 
-## 명령
-```bash
-# 가상환경 켜기
-source .venv/bin/activate          # Mac
-.venv\Scripts\Activate.ps1         # Windows PowerShell
+## 실행 환경
+- macOS, 셸은 zsh (VS Code 통합 터미널)
+- Python 가상환경: 프로젝트 폴더의 `.venv`
+- 터미널은 2개를 쓴다.
+  | 터미널 | 누가 쓰나 | 용도 |
+  |---|---|---|
+  | Claude용 | Claude | 파일 확인, `pytest`, `git` |
+  | 서버용 | 학생 | `flask --app app run --debug --port 5001` 실행·종료(Ctrl + C) |
+- 서버 포트는 **5001** → http://127.0.0.1:5001
+  (macOS AirPlay 수신 모드가 5000번 포트를 쓰기 때문에 5000은 쓰지 않는다.)
 
-pip install -r requirements.txt    # 패키지 설치 (처음 한 번)
-# DB 테이블은 앱 시작 시 create_app() 이 자동 생성한다 (CREATE TABLE IF NOT EXISTS, 데이터 유지).
-# init-db 명령은 남아 있지만 실행하지 않아도 된다.
-flask --app app run --debug        # 개발 서버 실행 → http://127.0.0.1:5000
-pytest -v                          # 테스트 실행 (실제 DB는 건드리지 않음)
+## Claude 실행 규칙
+- Claude는 서버(`python app.py`, `flask run`)를 직접 실행하지 않는다. 서버는 학생이 '서버' 터미널에서 직접 실행하고, Claude는 실행 명령만 안내한다.
+  - 이유: Claude가 띄운 서버와 학생이 띄운 서버가 같은 포트를 잡아 "Address already in use" 충돌이 나고, Claude가 띄운 서버는 학생이 끄기 어렵다.
+- 동작 확인은 Claude용 터미널에서 `pytest` 로 한다. 화면 확인이 필요하면 학생에게 서버 실행 명령과 확인할 주소·내용을 알려 준다.
+- 테스트는 실제 `instance/addressbook.db` 를 건드리지 않는다. (tests/conftest.py 의 임시 DB 사용)
+
+## 명령 (Mac zsh)
+```bash
+source .venv/bin/activate                   # 가상환경 켜기 (터미널을 새로 열 때마다)
+pip install -r requirements.txt             # 패키지 설치 (처음 한 번)
+flask --app app run --debug --port 5001     # 개발 서버 실행 → http://127.0.0.1:5001 (학생이 서버 터미널에서만 실행)
+pytest -v                                   # 테스트 실행 (Claude도 실행 가능, 실제 DB는 건드리지 않음)
 ```
+- DB 테이블은 앱 시작 시 `create_app()` 이 자동 생성한다 (CREATE TABLE IF NOT EXISTS, 데이터 유지). init-db 명령은 남아 있지만 실행하지 않아도 된다.
+- 작업 완료 기준: `pytest -q` 결과가 모두 passed (현재 18개).
 
 ## 코딩 규칙
 - 주석은 한글로 작성한다. 템플릿 안의 설명은 브라우저로 보내지지 않는 Jinja 주석 `{# #}` 을 쓴다.
