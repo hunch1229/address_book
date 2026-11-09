@@ -12,7 +12,7 @@ address_book/
 ├── app.py               # 앱 생성(create_app), 라우트, 입력 검증
 ├── db.py                # DB 연결/종료, init-db 명령, 연락처 CRUD·검색 함수
 ├── schema.sql           # contacts 테이블 정의
-├── templates/           # Jinja2 템플릿 (base.html, index.html, add.html)
+├── templates/           # Jinja2 템플릿 (base.html, index.html, form.html=등록·수정 공용, 404.html)
 ├── static/              # style.css
 ├── tests/               # pytest 테스트 (test_app.py)
 ├── instance/            # 실행 시 자동 생성, addressbook.db 저장 (git 제외)

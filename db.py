@@ -73,6 +73,40 @@ def create_contact(name, phone, email=None, address=None, memo=None):
     return cursor.lastrowid
 
 
+def get_contact(contact_id):
+    """id 로 연락처 하나를 찾아 돌려준다. 없으면 None."""
+    return get_db().execute(
+        "SELECT id, name, phone, email, address, memo, created_at"
+        " FROM contacts"
+        " WHERE id = ?",
+        (contact_id,),  # 값이 하나여도 튜플로 넘긴다. (쉼표 필수!)
+    ).fetchone()
+
+
+def update_contact(contact_id, name, phone, email=None, address=None, memo=None):
+    """연락처 하나를 수정한다. 실제로 바뀐 행 수(0 또는 1)를 돌려준다."""
+    db = get_db()
+    # WHERE id = ? 가 없으면 모든 연락처가 같은 값으로 덮어써진다. 절대 빼지 않는다.
+    cursor = db.execute(
+        "UPDATE contacts"
+        " SET name = ?, phone = ?, email = ?, address = ?, memo = ?"
+        " WHERE id = ?",
+        (name, phone, email, address, memo, contact_id),
+    )
+    db.commit()
+    # rowcount: 이 SQL로 바뀐 행의 수. 0이면 그 id의 연락처가 없었다는 뜻이다.
+    return cursor.rowcount
+
+
+def delete_contact(contact_id):
+    """연락처 하나를 삭제한다. 실제로 지운 행 수(0 또는 1)를 돌려준다."""
+    db = get_db()
+    # WHERE id = ? 가 없으면 테이블의 모든 연락처가 지워진다. 절대 빼지 않는다.
+    cursor = db.execute("DELETE FROM contacts WHERE id = ?", (contact_id,))
+    db.commit()
+    return cursor.rowcount
+
+
 @click.command("init-db")
 def init_db_command():
     """터미널 명령 'flask --app app init-db' 로 실행되는 함수."""

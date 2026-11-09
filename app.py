@@ -3,9 +3,52 @@
 
 import os
 
-from flask import Flask, flash, redirect, render_template, request, url_for
+from flask import (
+    Flask,
+    abort,
+    flash,
+    redirect,
+    render_template,
+    request,
+    url_for,
+)
 
 import db
+
+# 폼에서 받는 입력칸 이름 목록 (등록·수정 공통)
+FORM_FIELDS = ("name", "phone", "email", "address", "memo")
+
+
+def read_contact_form():
+    """요청에서 연락처 입력값을 꺼내 검사한다.
+
+    돌려주는 값: (form, errors)
+    - form   : 앞뒤 공백을 지운 입력값 딕셔너리
+    - errors : 오류 메시지 목록 (문제가 없으면 빈 목록)
+    """
+    form = {key: request.form.get(key, "").strip() for key in FORM_FIELDS}
+
+    # 필수 항목 검사 (형식 검사는 6단계에서 추가)
+    errors = []
+    if not form["name"]:
+        errors.append("이름을 입력하세요.")
+    if not form["phone"]:
+        errors.append("전화번호를 입력하세요.")
+    return form, errors
+
+
+def to_db_values(form):
+    """입력값을 DB에 넣을 형태로 바꾼다.
+
+    선택 항목(이메일, 주소, 메모)이 비어 있으면 빈 문자열("") 대신 NULL(None)로 저장한다.
+    """
+    return {
+        "name": form["name"],
+        "phone": form["phone"],
+        "email": form["email"] or None,
+        "address": form["address"] or None,
+        "memo": form["memo"] or None,
+    }
 
 
 def create_app(test_config=None):
@@ -38,6 +81,11 @@ def create_app(test_config=None):
     # db.py 의 DB 연결 정리 기능과 init-db 명령을 앱에 등록한다.
     db.init_app(app)
 
+    # 404 오류(없는 주소, 없는 연락처)가 나면 기본 영어 화면 대신 404.html 을 보여 준다.
+    @app.errorhandler(404)
+    def page_not_found(e):
+        return render_template("404.html"), 404
+
     # "/" 주소: 연락처 목록 화면
     @app.route("/")
     def index():
@@ -50,32 +98,16 @@ def create_app(test_config=None):
     # POST = 폼에서 보낸 값을 저장한다.
     @app.route("/add", methods=["GET", "POST"])
     def add_contact():
+        # 등록 화면과 수정 화면은 form.html 을 같이 쓰고, 제목과 보낼 주소만 다르다.
+        page = {"page_title": "새 연락처 등록", "action_url": url_for("add_contact")}
+
         if request.method == "POST":
-            # 폼에서 보낸 값을 꺼내고 앞뒤 공백을 지운다.
-            form = {
-                key: request.form.get(key, "").strip()
-                for key in ("name", "phone", "email", "address", "memo")
-            }
-
-            # 필수 항목 검사 (형식 검사는 6단계에서 추가)
-            errors = []
-            if not form["name"]:
-                errors.append("이름을 입력하세요.")
-            if not form["phone"]:
-                errors.append("전화번호를 입력하세요.")
-
+            form, errors = read_contact_form()
             if errors:
                 # 오류가 있으면 저장하지 않고, 입력한 값을 그대로 채운 폼을 다시 보여 준다.
-                return render_template("add.html", form=form, errors=errors), 400
+                return render_template("form.html", form=form, errors=errors, **page), 400
 
-            # 선택 항목이 비어 있으면 빈 문자열("") 대신 NULL(None)로 저장한다.
-            db.create_contact(
-                name=form["name"],
-                phone=form["phone"],
-                email=form["email"] or None,
-                address=form["address"] or None,
-                memo=form["memo"] or None,
-            )
+            db.create_contact(**to_db_values(form))
             # 다음 화면에서 한 번 보여 줄 안내 메시지를 저장해 둔다.
             flash("연락처가 등록되었습니다.")
             # 저장한 뒤에는 목록 화면으로 이동시킨다. (PRG 패턴)
@@ -83,7 +115,45 @@ def create_app(test_config=None):
             return redirect(url_for("index"))
 
         # GET 요청: 빈 폼을 보여 준다.
-        return render_template("add.html", form={}, errors=[])
+        return render_template("form.html", form={}, errors=[], **page)
+
+    # "/edit/3" 같은 주소: 3번 연락처 수정 화면
+    # <int:contact_id>: 주소의 숫자 부분을 정수로 받는다. 숫자가 아니면 자동으로 404.
+    @app.route("/edit/<int:contact_id>", methods=["GET", "POST"])
+    def edit_contact(contact_id):
+        contact = db.get_contact(contact_id)
+        if contact is None:
+            # 없는 id 면 404 화면을 보여 주고 함수를 끝낸다.
+            abort(404)
+
+        page = {
+            "page_title": "연락처 수정",
+            "action_url": url_for("edit_contact", contact_id=contact_id),
+        }
+
+        if request.method == "POST":
+            form, errors = read_contact_form()
+            if errors:
+                return render_template("form.html", form=form, errors=errors, **page), 400
+
+            db.update_contact(contact_id, **to_db_values(form))
+            flash("수정되었습니다.")
+            return redirect(url_for("index"))
+
+        # GET 요청: DB에 저장된 기존 값을 채운 폼을 보여 준다.
+        # dict(contact): sqlite3.Row 를 딕셔너리로 바꿔 form.get() 을 쓸 수 있게 한다.
+        return render_template("form.html", form=dict(contact), errors=[], **page)
+
+    # "/delete/3" 같은 주소: 3번 연락처 삭제
+    # methods=["POST"]: POST 요청만 받는다. 주소창에 입력하거나 링크를 눌러서(GET)
+    # 접근하면 405(허용되지 않은 방식) 오류가 나서 실수로 지워지는 일이 없다.
+    @app.route("/delete/<int:contact_id>", methods=["POST"])
+    def delete_contact(contact_id):
+        # 지운 행이 0개면 원래 없던 id 이므로 404
+        if db.delete_contact(contact_id) == 0:
+            abort(404)
+        flash("삭제되었습니다.")
+        return redirect(url_for("index"))
 
     return app
 

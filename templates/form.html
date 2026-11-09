@@ -1,0 +1,55 @@
+{# 연락처 입력 폼. 등록 화면과 수정 화면이 이 파일 하나를 같이 쓴다.
+   app.py 가 넘겨주는 값:
+   - page_title : 화면 제목 ("새 연락처 등록" 또는 "연락처 수정")
+   - action_url : 폼을 보낼 주소 ("/add" 또는 "/edit/3")
+   - form       : 입력칸에 채울 값 (등록은 빈 값, 수정은 기존 값, 오류 시 방금 입력한 값)
+   - errors     : 오류 메시지 목록 #}
+{% extends "base.html" %}
+
+{% block title %}{{ page_title }}{% endblock %}
+
+{% block content %}
+  <h2>{{ page_title }}</h2>
+
+  {% if errors %}
+    <ul class="errors">
+      {% for error in errors %}
+        <li>{{ error }}</li>
+      {% endfor %}
+    </ul>
+  {% endif %}
+
+  {# method="post": 입력값을 주소창이 아닌 요청 본문에 담아 보낸다. #}
+  <form method="post" action="{{ action_url }}">
+    {# value="{{ form.get(...) }}": 기존 값이나 방금 입력한 값을 입력칸에 채워 둔다.
+       DB 값이 NULL(None)이면 "None" 글자가 보이지 않도록 or '' 로 빈칸 처리한다. #}
+    <p>
+      <label for="name">이름 (필수)</label><br>
+      {# required: 브라우저가 빈칸 제출을 먼저 막아 준다. (서버에서도 다시 검사함) #}
+      <input type="text" id="name" name="name" value="{{ form.get('name') or '' }}" required>
+    </p>
+    <p>
+      <label for="phone">전화번호 (필수)</label><br>
+      {# type="tel": 휴대폰에서 숫자 키패드가 뜬다. #}
+      <input type="tel" id="phone" name="phone" value="{{ form.get('phone') or '' }}"
+             placeholder="010-1234-5678" required>
+    </p>
+    <p>
+      <label for="email">이메일</label><br>
+      <input type="email" id="email" name="email" value="{{ form.get('email') or '' }}">
+    </p>
+    <p>
+      <label for="address">주소</label><br>
+      <input type="text" id="address" name="address" value="{{ form.get('address') or '' }}">
+    </p>
+    <p>
+      <label for="memo">메모</label><br>
+      {# textarea 는 value 속성 대신 태그 사이에 값을 넣는다. #}
+      <textarea id="memo" name="memo" rows="4">{{ form.get('memo') or '' }}</textarea>
+    </p>
+    <p>
+      <button type="submit">저장</button>
+      <a href="{{ url_for('index') }}">취소</a>
+    </p>
+  </form>
+{% endblock %}

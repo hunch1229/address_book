@@ -17,6 +17,7 @@
           <th>전화번호</th>
           <th>이메일</th>
           <th>주소</th>
+          <th>관리</th>
         </tr>
       </thead>
       <tbody>
@@ -30,6 +31,18 @@
             {# 값이 없으면(None) 빈칸으로 둔다. #}
             <td>{{ contact["email"] or "" }}</td>
             <td>{{ contact["address"] or "" }}</td>
+            <td>
+              {# 수정: 화면을 여는 것뿐이라 일반 링크(GET)로 충분하다. #}
+              <a href="{{ url_for('edit_contact', contact_id=contact['id']) }}">수정</a>
+              {# 삭제: 데이터를 지우는 동작이라 반드시 POST 폼으로 보낸다.
+                 onsubmit 에서 confirm() 이 false(취소)를 돌려주면 폼이 전송되지 않는다. #}
+              <form method="post"
+                    action="{{ url_for('delete_contact', contact_id=contact['id']) }}"
+                    style="display:inline"
+                    onsubmit="return confirm('정말 삭제하시겠습니까?');">
+                <button type="submit">삭제</button>
+              </form>
+            </td>
           </tr>
         {% endfor %}
       </tbody>
